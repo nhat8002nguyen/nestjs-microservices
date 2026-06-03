@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Workflow } from 'apps/workflows-service/src/workflows/entities/workflow.entity';
+import { lastValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
+import { WORKFLOWS_SERVICE } from './constants';
 import { CreateBuildingDto } from './dto/create-building.dto';
 import { UpdateBuildingDto } from './dto/update-building.dto';
 import { Building } from './entities/building.entity';
@@ -10,6 +14,8 @@ export class BuildingsService {
   constructor(
     @InjectRepository(Building)
     private readonly buildingsRepository: Repository<Building>,
+    @Inject(WORKFLOWS_SERVICE)
+    private readonly workflowsService: ClientProxy,
   ) {}
 
   async create(createBuildingDto: CreateBuildingDto) {
@@ -49,25 +55,14 @@ export class BuildingsService {
     await this.buildingsRepository.remove(building);
   }
 
-  async createWorkflow(buildingId: number): Promise<any> {
-    const response = await fetch(
-      `http://${process.env.WORKFLOWS_SERVICE_HOST ?? 'workflows-service'}:${process.env.WORKFLOWS_SERVICE_PORT ?? 3001}/workflows`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: 'Building Workflow',
-          buildingId,
-        }),
-      },
+  async createWorkflow(buildingId: number): Promise<Workflow> {
+    const newWorkflow: Workflow = await lastValueFrom(
+      this.workflowsService.send('workflows.create', {
+        name: 'Building Workflow with nats',
+        buildingId,
+      }),
     );
-
-    if (!response.ok) {
-      throw new Error(`Workflow service responded with ${response.status}`);
-    }
-
-    return response.json();
+    console.log(newWorkflow);
+    return newWorkflow;
   }
 }
