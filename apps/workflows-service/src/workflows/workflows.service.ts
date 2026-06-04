@@ -13,6 +13,7 @@ export class WorkflowsService {
 
   async create(createWorkflowDto: CreateWorkflowDto) {
     const workflow = this.workflowsRepository.create(createWorkflowDto);
+    console.log('Creating workflow for building', workflow.buildingId);
     return this.workflowsRepository.save(workflow);
   }
 

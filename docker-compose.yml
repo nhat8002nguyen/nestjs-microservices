@@ -5,7 +5,7 @@ services:
       dockerfile: ./Dockerfile
       args:
         - APP_NAME=workflows-service
-    command: sh -c "npm install && npm run start:dev -- workflows-service"
+    command: sh -c "corepack enable && yarn install && yarn run start:dev -- workflows-service"
     environment: # Here we specify the environment variables that will be passed to the container
       - NODE_ENV=development
       - POSTGRES_HOST=workflows-db
@@ -17,12 +17,15 @@ services:
     volumes:
       - ./libs:/usr/src/app/libs
       - ./package.json:/usr/src/app/package.json
+      - ./yarn.lock:/usr/src/app/yarn.lock
       - ./tsconfig.json:/usr/src/app/tsconfig.json
       - ./nest-cli.json:/usr/src/app/nest-cli.json
       - ./apps/workflows-service:/usr/src/app/apps/workflows-service
     depends_on: # This instructs Docker Compose to start the "workflows-db" container before starting the "workflows-service" container
       - workflows-db
       - nats-server
+    deploy:
+      replicas: 3 # This instructs Docker Compose to run 3 instances of the "workflows-service" container
   workflows-db:
     image: postgres:18-alpine
     environment: # We need to make sure these environment variables match the ones we specified in the "workflows-service" service
@@ -35,7 +38,7 @@ services:
       dockerfile: ./Dockerfile
       args:
         - APP_NAME=virtual-facility
-    command: sh -c "npm install && npm run start:dev -- virtual-facility"
+    command: sh -c "corepack enable && yarn install && yarn run start:dev -- virtual-facility"
     ports:
       - 3000:3000 # This instructs Docker Compose to map port 3000 on the host to port 3000 on the container
     environment:
@@ -49,6 +52,7 @@ services:
     volumes:
       - ./libs:/usr/src/app/libs
       - ./package.json:/usr/src/app/package.json
+      - ./yarn.lock:/usr/src/app/yarn.lock
       - ./tsconfig.json:/usr/src/app/tsconfig.json
       - ./nest-cli.json:/usr/src/app/nest-cli.json
       - ./apps/virtual-facility:/usr/src/app/apps/virtual-facility
@@ -66,3 +70,41 @@ services:
     image: nats:latest
     ports:
       - 4222:4222
+  alarms-service:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        - APP_NAME=alarms-service
+    command: sh -c "corepack enable && yarn install && yarn run start:dev -- alarms-service"
+    environment:
+      - NODE_ENV=development
+      - NATS_SERVER_HOST=nats-server
+    volumes:
+      - ./libs:/usr/src/app/libs
+      - ./package.json:/usr/src/app/package.json
+      - ./yarn.lock:/usr/src/app/yarn.lock
+      - ./tsconfig.json:/usr/src/app/tsconfig.json
+      - ./nest-cli.json:/usr/src/app/nest-cli.json
+      - ./apps/alarms-service:/usr/src/app/apps/alarms-service
+    depends_on:
+      - nats-server
+  alarms-generator:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        - APP_NAME=alarms-generator
+    command: sh -c "corepack enable && yarn install && yarn run start:dev -- alarms-generator"
+    environment:
+      - NODE_ENV=development
+      - NATS_SERVER_HOST=nats-server
+    volumes:
+      - ./libs:/usr/src/app/libs
+      - ./package.json:/usr/src/app/package.json
+      - ./yarn.lock:/usr/src/app/yarn.lock
+      - ./tsconfig.json:/usr/src/app/tsconfig.json
+      - ./nest-cli.json:/usr/src/app/nest-cli.json
+      - ./apps/alarms-generator:/usr/src/app/apps/alarms-generator
+    depends_on:
+      - nats-server

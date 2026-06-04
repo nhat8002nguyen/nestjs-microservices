@@ -1,5 +1,5 @@
 # Base image
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Define variables
 ARG APP_NAME
@@ -7,17 +7,15 @@ ARG APP_NAME
 # Create app directory
 WORKDIR /usr/src/app
 
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-COPY package*.json ./
+COPY package.json yarn.lock ./
 
-# Install app dependencies
-RUN npm install
+RUN corepack enable && yarn install --frozen-lockfile
 
 # Bundle app source
 COPY . .
 
 # Creates a "dist" folder with the production build
-RUN npm run build -- ${APP_NAME}
+RUN yarn run build -- ${APP_NAME}
 
 ENV NODE_ENV=production
 
