@@ -17,9 +17,9 @@ import { ALARMS_CLASSIFIER_SERVICE, NOTIFICATIONS_SERVICE } from './constants';
       },
       {
         name: NOTIFICATIONS_SERVICE,
-        transport: Transport.NATS,
+        transport: Transport.RMQ,
         options: {
-          servers: [process.env.NATS_SERVER_HOST ?? 'nats-server:4222'],
+          urls: [process.env.RABBITMQ_HOST ?? 'amqp://rabbitmq:5672'],
           queue: 'notifications-service',
         },
       },

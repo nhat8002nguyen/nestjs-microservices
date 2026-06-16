@@ -8,9 +8,9 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.NATS,
+    transport: Transport.RMQ,
     options: {
-      servers: [process.env.NATS_SERVER_HOST ?? 'nats-server:4222'],
+      urls: [process.env.RABBITMQ_HOST ?? 'amqp://rabbitmq:5672'],
       queue: 'workflows-service',
     },
   });

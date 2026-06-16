@@ -1115,6 +1115,13 @@
   dependencies:
     tslib "^2.4.0"
 
+"@types/amqplib@^0.10.8":
+  version "0.10.8"
+  resolved "https://registry.npmjs.org/@types/amqplib/-/amqplib-0.10.8.tgz#23f2945d055e9fd583da672aa5ec0c7350b9e4e6"
+  integrity sha512-vtDp8Pk1wsE/AuQ8/Rgtm6KUZYqcnTgNvEHwzCkX8rL7AGsC6zqAfKAAJhUZXFhM/Pp++tbnUHiam/8vVpPztA==
+  dependencies:
+    "@types/node" "*"
+
 "@types/babel__core@^7.20.5":
   version "7.20.5"
   resolved "https://registry.npmjs.org/@types/babel__core/-/babel__core-7.20.5.tgz"
@@ -1758,6 +1765,18 @@ ajv@^8.0.0, ajv@^8.9.0:
     fast-uri "^3.0.1"
     json-schema-traverse "^1.0.0"
     require-from-string "^2.0.2"
+
+amqp-connection-manager@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/amqp-connection-manager/-/amqp-connection-manager-5.0.0.tgz#3bf72f76e1e041768080227fffab1f9baea70baa"
+  integrity sha512-88yQzqa5RSBgnLl504XjvCQJ7d+osskdwvg35Lwm1LRbfLjNU9p7SQUMSP82BB7mseiq9tIUPJ3HE3eXQbpjEw==
+  dependencies:
+    promise-breaker "^6.0.0"
+
+amqplib@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.npmjs.org/amqplib/-/amqplib-2.0.1.tgz#7f14517c1d5f6e8608cf0abf4df817e923eb59b6"
+  integrity sha512-a3P2MgfCf9nzVis12VxWEn0dS6hcqve7dlEAhXDtIWR27BlhtMkILOc+H9aeHjDi6i6r94dYKc2Kx2OFe3avvg==
 
 ansi-align@^3.0.0:
   version "3.0.1"
@@ -4330,6 +4349,11 @@ pretty-format@30.4.1, pretty-format@^30.0.0:
     ansi-styles "^5.2.0"
     react-is-18 "npm:react-is@^18.3.1"
     react-is-19 "npm:react-is@^19.2.5"
+
+promise-breaker@^6.0.0:
+  version "6.0.0"
+  resolved "https://registry.npmjs.org/promise-breaker/-/promise-breaker-6.0.0.tgz#107d2b70f161236abdb4ac5a736c7eb8df489d0f"
+  integrity sha512-BthzO9yTPswGf7etOBiHCVuugs2N01/Q/94dIPls48z2zCmrnDptUUZzfIb+41xq0MnYZ/BzmOd6ikDR4ibNZA==
 
 proxy-addr@^2.0.7:
   version "2.0.7"

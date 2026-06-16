@@ -23,7 +23,7 @@
     "noFallthroughCasesInSwitch": false,
     "paths": {
       "@app/workflows": [
-        "libs/workflows/src"
+        "libs/workflows/src/index.ts"
       ],
       "@app/workflows/*": [
         "libs/workflows/src/*"

@@ -1,7 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Workflow } from 'apps/workflows-service/src/workflows/entities/workflow.entity';
 import { lastValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
 import { WORKFLOWS_SERVICE } from './constants';
@@ -55,10 +54,14 @@ export class BuildingsService {
     await this.buildingsRepository.remove(building);
   }
 
-  async createWorkflow(buildingId: number): Promise<Workflow> {
-    const newWorkflow: Workflow = await lastValueFrom(
+  async createWorkflow(buildingId: number) {
+    const newWorkflow = await lastValueFrom<{
+      id: number;
+      buildingId: number;
+      name: string;
+    }>(
       this.workflowsService.send('workflows.create', {
-        name: 'Building Workflow with nats',
+        name: 'Building Workflow with rabbitmq',
         buildingId,
       }),
     );

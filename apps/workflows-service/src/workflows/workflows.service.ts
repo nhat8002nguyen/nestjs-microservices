@@ -2,7 +2,7 @@ import { CreateWorkflowDto, UpdateWorkflowDto } from '@app/workflows';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Workflow } from './entities/workflow.entity';
+import { Workflow } from '@app/workflows';
 
 @Injectable()
 export class WorkflowsService {
@@ -11,17 +11,17 @@ export class WorkflowsService {
     private readonly workflowsRepository: Repository<Workflow>,
   ) {}
 
-  async create(createWorkflowDto: CreateWorkflowDto) {
+  async create(createWorkflowDto: CreateWorkflowDto): Promise<Workflow> {
     const workflow = this.workflowsRepository.create(createWorkflowDto);
     console.log('Creating workflow for building', workflow.buildingId);
     return this.workflowsRepository.save(workflow);
   }
 
-  findAll() {
+  findAll(): Promise<Workflow[]> {
     return this.workflowsRepository.find();
   }
 
-  async findOne(id: number) {
+  async findOne(id: number): Promise<Workflow> {
     const workflow = await this.workflowsRepository.findOneBy({ id });
     if (!workflow) {
       throw new NotFoundException(`Workflow with id ${id} not found`);
@@ -29,7 +29,10 @@ export class WorkflowsService {
     return workflow;
   }
 
-  async update(id: number, updateWorkflowDto: UpdateWorkflowDto) {
+  async update(
+    id: number,
+    updateWorkflowDto: UpdateWorkflowDto,
+  ): Promise<Workflow> {
     const workflow = await this.findOne(id);
     if (updateWorkflowDto.buildingId !== undefined) {
       workflow.buildingId = updateWorkflowDto.buildingId;
@@ -40,7 +43,7 @@ export class WorkflowsService {
     return this.workflowsRepository.save(workflow);
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<Workflow> {
     const workflow = await this.findOne(id);
     await this.workflowsRepository.remove(workflow);
     return workflow;
