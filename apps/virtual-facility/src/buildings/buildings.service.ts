@@ -2,7 +2,8 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { lastValueFrom } from 'rxjs';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { Outbox } from '../../../../libs/outbox/src/entities/outbox.entity';
 import { WORKFLOWS_SERVICE } from './constants';
 import { CreateBuildingDto } from './dto/create-building.dto';
 import { UpdateBuildingDto } from './dto/update-building.dto';
@@ -15,15 +16,37 @@ export class BuildingsService {
     private readonly buildingsRepository: Repository<Building>,
     @Inject(WORKFLOWS_SERVICE)
     private readonly workflowsService: ClientProxy,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(createBuildingDto: CreateBuildingDto) {
-    const building = this.buildingsRepository.create({
-      name: createBuildingDto.name,
-    });
-    const savedBuilding = await this.buildingsRepository.save(building);
-    await this.createWorkflow(savedBuilding.id);
-    return savedBuilding;
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const buildingsRepository = queryRunner.manager.getRepository(Building);
+      const outboxRepository = queryRunner.manager.getRepository(Outbox);
+      const building = buildingsRepository.create({
+        name: createBuildingDto.name,
+      });
+      const savedBuilding = await buildingsRepository.save(building);
+
+      await outboxRepository.save({
+        type: 'workflows.create',
+        payload: {
+          name: 'Building Workflow with rabbitmq',
+          buildingId: savedBuilding.id,
+        },
+        target: WORKFLOWS_SERVICE.description,
+      });
+      await queryRunner.commitTransaction();
+      return savedBuilding;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   findAll(): Promise<Building[]> {
@@ -60,7 +83,7 @@ export class BuildingsService {
       buildingId: number;
       name: string;
     }>(
-      this.workflowsService.send('workflows.create', {
+      this.workflowsService.emit('workflows.create', {
         name: 'Building Workflow with rabbitmq',
         buildingId,
       }),

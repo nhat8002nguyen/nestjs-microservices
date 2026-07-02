@@ -92,6 +92,7 @@
       "<rootDir>/libs/"
     ],
     "moduleNameMapper": {
+      "^@app/outbox(|/.*)$": "<rootDir>/libs/outbox/src/$1",
       "^@app/workflows(|/.*)$": "<rootDir>/libs/workflows/src/$1"
     }
   }

@@ -22,6 +22,12 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
+      "@app/outbox": [
+        "libs/outbox/src/index.ts"
+      ],
+      "@app/outbox/*": [
+        "libs/outbox/src/*"
+      ],
       "@app/workflows": [
         "libs/workflows/src/index.ts"
       ],

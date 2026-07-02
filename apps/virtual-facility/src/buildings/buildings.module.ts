@@ -5,10 +5,12 @@ import { BuildingsController } from './buildings.controller';
 import { BuildingsService } from './buildings.service';
 import { WORKFLOWS_SERVICE } from './constants';
 import { Building } from './entities/building.entity';
+import { OutboxService } from '@app/outbox';
+import { Outbox } from '../../../../libs/outbox/src/entities/outbox.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Building]),
+    TypeOrmModule.forFeature([Building, Outbox]),
     ClientsModule.register([
       {
         name: WORKFLOWS_SERVICE,
@@ -21,6 +23,6 @@ import { Building } from './entities/building.entity';
     ]),
   ],
   controllers: [BuildingsController],
-  providers: [BuildingsService],
+  providers: [BuildingsService, OutboxService],
 })
 export class BuildingsModule {}

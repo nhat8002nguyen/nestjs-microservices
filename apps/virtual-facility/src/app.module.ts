@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { BuildingsModule } from './buildings/buildings.module';
 import { HealthModule } from './health/health.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { OutboxModule } from 'libs/outbox/src/outbox.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     }),
     BuildingsModule,
     HealthModule,
+    OutboxModule,
   ],
   controllers: [AppController],
   providers: [AppService],
