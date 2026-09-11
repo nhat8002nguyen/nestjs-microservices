@@ -22,6 +22,12 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
+      "@app/inbox": [
+        "libs/inbox/src/index.ts"
+      ],
+      "@app/inbox/*": [
+        "libs/inbox/src/*"
+      ],
       "@app/outbox": [
         "libs/outbox/src/index.ts"
       ],

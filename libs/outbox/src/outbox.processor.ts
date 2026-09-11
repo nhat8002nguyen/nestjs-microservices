@@ -1,5 +1,5 @@
 import { Inject, Logger } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RmqRecordBuilder } from '@nestjs/microservices';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { WORKFLOWS_SERVICE } from 'apps/virtual-facility/src/buildings/constants';
 import { lastValueFrom } from 'rxjs';
@@ -32,9 +32,13 @@ export class OutboxProcessor {
   }
 
   async dispatchWorkflowEvent(message: Outbox) {
-    this.logger.log(`Dispatching workflow event for message ${message.id}`);
-    await lastValueFrom(
-      this.workflowsService.emit(message.type, message.payload),
+    const messageId = `outbox:${message.id}`;
+    this.logger.log(
+      `[outbox → rmq] emit ${message.type} messageId=${messageId}`,
     );
+    const record = new RmqRecordBuilder(message.payload)
+      .setOptions({ messageId })
+      .build();
+    await lastValueFrom(this.workflowsService.emit(message.type, record));
   }
 }

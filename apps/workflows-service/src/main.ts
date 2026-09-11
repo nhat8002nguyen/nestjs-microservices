@@ -12,6 +12,7 @@ async function bootstrap() {
     options: {
       urls: [process.env.RABBITMQ_HOST ?? 'amqp://rabbitmq:5672'],
       queue: 'workflows-service',
+      noAck: false,
     },
   });
   await app.startAllMicroservices();

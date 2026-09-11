@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
+import { InboxModule } from '@app/inbox/inbox.module';
+import { CreateWorkflowDto } from '@app/workflows';
 import { WorkflowsServiceController } from './workflows-service.controller';
 import { WorkflowsServiceService } from './workflows-service.service';
 import { HealthModule } from './health/health.module';
 import { WorkflowsModule } from './workflows/workflows.module';
+import { WorkflowsService } from './workflows/workflows.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
@@ -19,6 +22,24 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     }),
     WorkflowsModule,
     HealthModule,
+    InboxModule.registerAsync({
+      imports: [WorkflowsModule],
+      inject: [WorkflowsService],
+      useFactory: (workflowsService: WorkflowsService) => ({
+        redis: {
+          host: process.env.REDIS_HOST ?? 'redis',
+          port: parseInt(process.env.REDIS_PORT ?? '6379', 10),
+        },
+        repeatEveryMs: 10_000,
+        take: 100,
+        maxAttempts: 3,
+        handlers: {
+          'workflows.create': async (payload, em) => {
+            await workflowsService.create(payload as CreateWorkflowDto, em);
+          },
+        },
+      }),
+    }),
   ],
   controllers: [WorkflowsServiceController],
   providers: [WorkflowsServiceService],
