@@ -11,12 +11,18 @@ describe('AlarmsClassifierController', () => {
       providers: [AlarmsClassifierService],
     }).compile();
 
-    alarmsClassifierController = app.get<AlarmsClassifierController>(AlarmsClassifierController);
+    alarmsClassifierController = app.get(AlarmsClassifierController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(alarmsClassifierController.getHello()).toBe('Hello World!');
+  it('classifies an alarm with an id and a known severity', () => {
+    const result = alarmsClassifierController.classifyAlarm({
+      name: 'smoke',
+      buildingId: 1,
     });
+
+    expect(result.id).toMatch(/^alarm-/);
+    expect(['critical', 'major', 'minor', 'warning', 'info']).toContain(
+      result.classification,
+    );
   });
 });

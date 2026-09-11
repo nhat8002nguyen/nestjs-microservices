@@ -8,5 +8,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
   imports: [TypeOrmModule.forFeature([Workflow])],
   controllers: [WorkflowsController],
   providers: [WorkflowsService],
+  exports: [WorkflowsService],
 })
 export class WorkflowsModule {}

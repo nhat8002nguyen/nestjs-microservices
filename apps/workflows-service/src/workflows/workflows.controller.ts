@@ -1,15 +1,55 @@
-import { Controller, Get, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Logger,
+} from '@nestjs/common';
+import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
+import { Channel, Message } from 'amqplib';
+import { InboxService } from '../../../../libs/inbox/src/inbox.service';
 import { WorkflowsService } from './workflows.service';
 import { CreateWorkflowDto, UpdateWorkflowDto } from '@app/workflows';
-import { EventPattern, Payload } from '@nestjs/microservices';
 
 @Controller('workflows')
 export class WorkflowsController {
-  constructor(private readonly workflowsService: WorkflowsService) {}
+  private readonly logger = new Logger(WorkflowsController.name);
+
+  constructor(
+    private readonly workflowsService: WorkflowsService,
+    private readonly inboxService: InboxService,
+  ) {}
 
   @EventPattern('workflows.create')
-  create(@Payload() createWorkflowDto: CreateWorkflowDto) {
-    return this.workflowsService.create(createWorkflowDto);
+  async create(
+    @Payload() createWorkflowDto: CreateWorkflowDto,
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef() as Channel;
+    const originalMessage = context.getMessage() as Message;
+    const messageId = originalMessage.properties.messageId as
+      | string
+      | undefined;
+
+    if (!messageId) {
+      this.logger.error(
+        'Missing messageId on workflows.create; acking without store',
+      );
+      channel.ack(originalMessage);
+      return;
+    }
+
+    const stored = await this.inboxService.store({
+      messageId,
+      type: 'workflows.create',
+      payload: createWorkflowDto as unknown as Record<string, unknown>,
+    });
+    this.logger.log(
+      `[rmq → inbox] stored messageId=${messageId} inboxId=${stored.id} status=${stored.status}; acking RMQ`,
+    );
+    channel.ack(originalMessage);
   }
 
   @Get()

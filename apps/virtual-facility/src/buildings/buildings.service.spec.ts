@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { BuildingsService } from './buildings.service';
+import { WORKFLOWS_SERVICE } from './constants';
 import { Building } from './entities/building.entity';
 
 describe('BuildingsService', () => {
@@ -19,10 +21,18 @@ describe('BuildingsService', () => {
             remove: jest.fn(),
           },
         },
+        {
+          provide: WORKFLOWS_SERVICE,
+          useValue: { emit: jest.fn(), send: jest.fn() },
+        },
+        {
+          provide: DataSource,
+          useValue: { createQueryRunner: jest.fn() },
+        },
       ],
     }).compile();
 
-    service = module.get<BuildingsService>(BuildingsService);
+    service = module.get(BuildingsService);
   });
 
   it('should be defined', () => {

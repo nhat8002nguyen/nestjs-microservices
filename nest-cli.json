@@ -46,6 +46,15 @@
         "tsConfigPath": "apps/notifications-service/tsconfig.app.json"
       }
     },
+    "inbox": {
+      "type": "library",
+      "root": "libs/inbox",
+      "entryFile": "index",
+      "sourceRoot": "libs/inbox/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/inbox/tsconfig.lib.json"
+      }
+    },
     "outbox": {
       "type": "library",
       "root": "libs/outbox",

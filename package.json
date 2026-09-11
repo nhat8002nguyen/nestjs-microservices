@@ -26,6 +26,7 @@
     "test:e2e": "jest --config ./apps/virtual-facility/test/jest-e2e.json"
   },
   "dependencies": {
+    "@nestjs/bullmq": "^12.0.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/mapped-types": "*",
@@ -36,8 +37,10 @@
     "@nestjs/typeorm": "^11.0.1",
     "amqp-connection-manager": "^5.0.0",
     "amqplib": "^2.0.1",
+    "bullmq": "^6.3.4",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "ioredis": "^6.0.0",
     "nats": "^2.29.3",
     "pg": "^8.21.0",
     "reflect-metadata": "^0.2.2",
@@ -87,13 +90,18 @@
     ],
     "coverageDirectory": "./coverage",
     "testEnvironment": "node",
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(@nestjs/bullmq|@nestjs/bull-shared)/)"
+    ],
     "roots": [
       "<rootDir>/apps/",
       "<rootDir>/libs/"
     ],
     "moduleNameMapper": {
+      "^@app/inbox(|/.*)$": "<rootDir>/libs/inbox/src/$1",
       "^@app/outbox(|/.*)$": "<rootDir>/libs/outbox/src/$1",
-      "^@app/workflows(|/.*)$": "<rootDir>/libs/workflows/src/$1"
+      "^@app/workflows(|/.*)$": "<rootDir>/libs/workflows/src/$1",
+      "^apps/(.*)$": "<rootDir>/apps/$1"
     }
   }
 }
