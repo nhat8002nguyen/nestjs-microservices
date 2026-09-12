@@ -145,3 +145,6 @@ services:
     image: redis:7-alpine
   rabbitmq:
     image: rabbitmq:3-management
+    ports:
+      - 5672:5672 # AMQP, so host-side scripts and tests can publish directly
+      - 15672:15672 # management UI
