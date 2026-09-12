@@ -1,28 +1,17 @@
+import { NatsClientModule, RmqClientModule, TracingModule } from '@app/tracing';
 import { Module } from '@nestjs/common';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AlarmsServiceController } from './alarms-service.controller';
 import { AlarmsServiceService } from './alarms-service.service';
 import { ALARMS_CLASSIFIER_SERVICE, NOTIFICATIONS_SERVICE } from './constants';
 
 @Module({
   imports: [
-    ClientsModule.register([
-      {
-        name: ALARMS_CLASSIFIER_SERVICE,
-        transport: Transport.NATS,
-        options: {
-          servers: [process.env.NATS_SERVER_HOST ?? 'nats-server:4222'],
-          queue: 'alarms-classifier-service',
-        },
-      },
-      {
-        name: NOTIFICATIONS_SERVICE,
-        transport: Transport.RMQ,
-        options: {
-          urls: [process.env.RABBITMQ_HOST ?? 'amqp://rabbitmq:5672'],
-          queue: 'notifications-service',
-        },
-      },
+    TracingModule,
+    NatsClientModule.register([
+      { name: ALARMS_CLASSIFIER_SERVICE, queue: 'alarms-classifier-service' },
+    ]),
+    RmqClientModule.register([
+      { name: NOTIFICATIONS_SERVICE, queue: 'notifications-service' },
     ]),
   ],
   controllers: [AlarmsServiceController],
