@@ -100,6 +100,7 @@
     "moduleNameMapper": {
       "^@app/inbox(|/.*)$": "<rootDir>/libs/inbox/src/$1",
       "^@app/outbox(|/.*)$": "<rootDir>/libs/outbox/src/$1",
+      "^@app/tracing(|/.*)$": "<rootDir>/libs/tracing/src/$1",
       "^@app/workflows(|/.*)$": "<rootDir>/libs/workflows/src/$1",
       "^apps/(.*)$": "<rootDir>/apps/$1"
     }

@@ -1,11 +1,12 @@
-import { Controller, Logger } from '@nestjs/common';
+import { TracingLogger } from '@app/tracing';
+import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AlarmsClassifierService } from './alarms-classifier.service';
 
 @Controller()
 export class AlarmsClassifierController {
-  private readonly logger = new Logger(AlarmsClassifierController.name);
   constructor(
+    private readonly logger: TracingLogger,
     private readonly alarmsClassifierService: AlarmsClassifierService,
   ) {}
 

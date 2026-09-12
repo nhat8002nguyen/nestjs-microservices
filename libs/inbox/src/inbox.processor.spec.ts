@@ -42,8 +42,8 @@ describe('InboxProcessor', () => {
     };
     manager = { id: 'tx-manager' } as unknown as EntityManager;
     dataSource = {
-      transaction: jest.fn(async (cb: (em: EntityManager) => Promise<unknown>) =>
-        cb(manager),
+      transaction: jest.fn(
+        async (cb: (em: EntityManager) => Promise<unknown>) => cb(manager),
       ),
     };
     workflowsCreate = jest.fn().mockResolvedValue(undefined);

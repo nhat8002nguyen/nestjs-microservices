@@ -27,9 +27,10 @@ describe('WorkflowsController', () => {
     controller = module.get(WorkflowsController);
   });
 
-  function contextWith(message: {
-    properties: { messageId?: string };
-  }): { context: RmqContext; channel: { ack: jest.Mock } } {
+  function contextWith(message: { properties: { messageId?: string } }): {
+    context: RmqContext;
+    channel: { ack: jest.Mock };
+  } {
     const channel = { ack: jest.fn() };
     const context = {
       getChannelRef: () => channel,

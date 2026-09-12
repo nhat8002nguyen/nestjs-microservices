@@ -151,7 +151,12 @@ describe('InboxService', () => {
       getRepository: jest.fn().mockReturnValue({ findOneByOrFail, save }),
     } as unknown as EntityManager;
 
-    await service.recordFailure(7, new Error('boom'), { maxAttempts: 3 }, manager);
+    await service.recordFailure(
+      7,
+      new Error('boom'),
+      { maxAttempts: 3 },
+      manager,
+    );
 
     expect(row.attempts).toBe(1);
     expect(row.status).toBe('pending');
@@ -172,7 +177,12 @@ describe('InboxService', () => {
       getRepository: jest.fn().mockReturnValue({ findOneByOrFail, save }),
     } as unknown as EntityManager;
 
-    await service.recordFailure(7, new Error('boom'), { maxAttempts: 3 }, manager);
+    await service.recordFailure(
+      7,
+      new Error('boom'),
+      { maxAttempts: 3 },
+      manager,
+    );
 
     expect(row.attempts).toBe(3);
     expect(row.status).toBe('failed');
