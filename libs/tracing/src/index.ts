@@ -1,5 +1,7 @@
 export * from './clients/nats-client.module';
 export * from './clients/nats-client.proxy';
+export * from './clients/rmq-client.module';
+export * from './clients/rmq-client.proxy';
 export * from './clients/traced-client.module-factory';
 export * from './clients/tracing-client-proxy.base';
 export * from './clients/tracing-client.types';
