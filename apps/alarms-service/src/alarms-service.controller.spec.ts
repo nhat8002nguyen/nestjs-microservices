@@ -1,56 +1,58 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { TraceContextService, TraceService, TracingLogger } from '@app/tracing';
 import { of } from 'rxjs';
 import { AlarmsServiceController } from './alarms-service.controller';
-import { AlarmsServiceService } from './alarms-service.service';
-import { ALARMS_CLASSIFIER_SERVICE, NOTIFICATIONS_SERVICE } from './constants';
 
 describe('AlarmsServiceController', () => {
+  let traceContext: TraceContextService;
+  let classifier: { send: jest.Mock; emit: jest.Mock };
+  let notifications: { send: jest.Mock; emit: jest.Mock };
   let controller: AlarmsServiceController;
-  let alarmsClassifierService: { send: jest.Mock };
-  let notificationsService: { emit: jest.Mock };
 
-  beforeEach(async () => {
-    alarmsClassifierService = {
-      send: jest
-        .fn()
-        .mockReturnValue(of({ id: 'alarm-test123', classification: 'minor' })),
+  beforeEach(() => {
+    traceContext = new TraceContextService(new TraceService());
+    classifier = {
+      send: jest.fn(() => of({ id: 'alarm-1', classification: 'critical' })),
+      emit: jest.fn(() => of(undefined)),
     };
-    notificationsService = {
-      emit: jest.fn().mockReturnValue(of(undefined)),
-    };
-
-    const app: TestingModule = await Test.createTestingModule({
-      controllers: [AlarmsServiceController],
-      providers: [
-        AlarmsServiceService,
-        {
-          provide: ALARMS_CLASSIFIER_SERVICE,
-          useValue: alarmsClassifierService,
-        },
-        { provide: NOTIFICATIONS_SERVICE, useValue: notificationsService },
-      ],
-    }).compile();
-
-    controller = app.get<AlarmsServiceController>(AlarmsServiceController);
+    notifications = { send: jest.fn(), emit: jest.fn(() => of(undefined)) };
+    controller = new AlarmsServiceController(
+      new TracingLogger('AlarmsServiceController', traceContext),
+      classifier,
+      notifications,
+    );
   });
 
-  describe('createAlarm', () => {
-    it('classifies the alarm and creates a notification', async () => {
-      const alarm = { name: 'Alarm #test', buildingId: 42 };
-      const result = await controller.createAlarm(alarm);
-
-      expect(alarmsClassifierService.send).toHaveBeenCalledWith(
-        'alarms.classify',
-        alarm,
-      );
-      expect(notificationsService.emit).toHaveBeenCalledWith(
-        'notifications.create',
-        { alarmId: 'alarm-test123' },
-      );
-      expect(result).toEqual({
-        id: 'alarm-test123',
-        classification: 'minor',
-      });
+  it('classifies the alarm and then requests a notification', async () => {
+    const result = await controller.createAlarm({
+      name: 'smoke',
+      buildingId: 1,
     });
+
+    expect(classifier.send).toHaveBeenCalledWith('alarms.classify', {
+      name: 'smoke',
+      buildingId: 1,
+    });
+    expect(notifications.emit).toHaveBeenCalledWith('notifications.create', {
+      alarmId: 'alarm-1',
+    });
+    expect(result).toEqual({ id: 'alarm-1', classification: 'critical' });
+  });
+
+  it('makes both outbound calls inside the caller trace scope', async () => {
+    const observed: (string | undefined)[] = [];
+    classifier.send.mockImplementation(() => {
+      observed.push(traceContext.getTraceId());
+      return of({ id: 'alarm-1', classification: 'critical' });
+    });
+    notifications.emit.mockImplementation(() => {
+      observed.push(traceContext.getTraceId());
+      return of(undefined);
+    });
+
+    await traceContext.run('trace-1', () =>
+      controller.createAlarm({ name: 'smoke', buildingId: 1 }),
+    );
+
+    expect(observed).toEqual(['trace-1', 'trace-1']);
   });
 });
