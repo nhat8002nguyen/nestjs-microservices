@@ -41,6 +41,13 @@ Working around it requires `ContextIdFactory.create()` + `moduleRef.registerRequ
   ```
 
   `TracingLogger` is a class used as a DI token, so it stays a value import. This applies to Task 8 and Task 11.
+- **Hybrid apps must opt into inheriting the global interceptor.** `alarms-service`, `alarms-classifier-service` and `notifications-service` all call `NestFactory.create(...)` then `app.connectMicroservice(...)`. `connectMicroservice` builds a **fresh `ApplicationConfig`** unless `inheritAppConfig: true` is passed (`nest-application.js:129-131`), so an `APP_INTERCEPTOR` registered by `TracingModule` applies only to the HTTP server and **never runs for message handlers**. Every one of those three `main.ts` files needs:
+
+  ```ts
+  app.connectMicroservice<MicroserviceOptions>(options, { inheritAppConfig: true });
+  ```
+
+  Symptom when missing: inbound handlers log with no `[trace:...]` prefix at all (not even a freshly generated one, since the scope is never opened). Unit tests cannot catch this — only the Task 12 end-to-end run does.
 - **Package manager is yarn** (`preinstall` runs `only-allow yarn`). Never invoke `npm install`.
 - **Prettier**: `singleQuote: true`, `trailingComma: "all"`.
 - **Use `const`/`let`, never `var`.**
