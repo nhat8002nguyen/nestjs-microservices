@@ -98,9 +98,8 @@ describe('InboxService', () => {
     const where = jest.fn().mockReturnValue({ andWhere });
     const setOnLocked = jest.fn().mockReturnValue({ where });
     const setLock = jest.fn().mockReturnValue({ setOnLocked });
-    const manager = {
-      createQueryBuilder: jest.fn().mockReturnValue({ setLock }),
-    } as unknown as EntityManager;
+    const createQueryBuilder = jest.fn().mockReturnValue({ setLock });
+    const manager = { createQueryBuilder } as unknown as EntityManager;
 
     const result = await service.claimPending({
       take: 1,
@@ -108,7 +107,7 @@ describe('InboxService', () => {
       manager,
     });
 
-    expect(manager.createQueryBuilder).toHaveBeenCalledWith(Inbox, 'inbox');
+    expect(createQueryBuilder).toHaveBeenCalledWith(Inbox, 'inbox');
     expect(setLock).toHaveBeenCalledWith('pessimistic_write');
     expect(setOnLocked).toHaveBeenCalledWith('skip_locked');
     expect(where).toHaveBeenCalledWith('inbox.status = :status', {
@@ -128,13 +127,12 @@ describe('InboxService', () => {
       id: 7,
       status: 'pending',
     });
-    const manager = {
-      getRepository: jest.fn().mockReturnValue({ findOneByOrFail, save }),
-    } as unknown as EntityManager;
+    const getRepository = jest.fn().mockReturnValue({ findOneByOrFail, save });
+    const manager = { getRepository } as unknown as EntityManager;
 
     await service.markProcessed(7, manager);
 
-    expect(manager.getRepository).toHaveBeenCalledWith(Inbox);
+    expect(getRepository).toHaveBeenCalledWith(Inbox);
     expect(save).toHaveBeenCalledWith({ id: 7, status: 'processed' });
   });
 

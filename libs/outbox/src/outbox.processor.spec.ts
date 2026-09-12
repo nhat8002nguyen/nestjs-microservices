@@ -6,7 +6,9 @@ import { OutboxService } from './outbox.service';
 
 describe('OutboxProcessor', () => {
   it('emits with messageId outbox:{id}', async () => {
-    const emit = jest.fn().mockReturnValue(of(undefined));
+    const emit = jest
+      .fn<ReturnType<ClientProxy['emit']>, [string, unknown]>()
+      .mockReturnValue(of(undefined));
     const processor = new OutboxProcessor(
       {} as OutboxService,
       { emit } as unknown as ClientProxy,
@@ -20,11 +22,11 @@ describe('OutboxProcessor', () => {
     await processor.dispatchWorkflowEvent(message);
 
     expect(emit).toHaveBeenCalledTimes(1);
-    expect(emit.mock.calls[0][0]).toBe('workflows.create');
-    const record = emit.mock.calls[0][1] as {
-      data: unknown;
-      options?: { messageId?: string };
-    };
+    const [pattern, record] = emit.mock.calls[0] as [
+      string,
+      { data: unknown; options?: { messageId?: string } },
+    ];
+    expect(pattern).toBe('workflows.create');
     expect(record.data).toEqual(message.payload);
     expect(record.options?.messageId).toBe('outbox:42');
   });

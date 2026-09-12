@@ -1,3 +1,4 @@
+import { FactoryProvider, ModuleMetadata } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 
 export type InboxHandler = (
@@ -14,8 +15,8 @@ export interface InboxModuleOptions {
 }
 
 export interface InboxModuleAsyncOptions {
-  imports?: any[];
-  inject?: any[];
+  imports?: ModuleMetadata['imports'];
+  inject?: FactoryProvider['inject'];
   useFactory: (
     ...args: any[]
   ) => InboxModuleOptions | Promise<InboxModuleOptions>;

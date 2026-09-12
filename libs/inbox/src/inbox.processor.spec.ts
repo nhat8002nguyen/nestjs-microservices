@@ -31,7 +31,7 @@ describe('InboxProcessor', () => {
     payload: { name: 'wf', buildingId: 1 },
     status: 'pending',
     attempts: 0,
-  } as Inbox;
+  } as unknown as Inbox;
 
   beforeEach(() => {
     inboxService = {

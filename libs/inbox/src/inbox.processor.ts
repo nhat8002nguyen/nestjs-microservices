@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Processor, WorkerHost, InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue } from 'bullmq';
+import { Queue } from 'bullmq';
 import { DataSource, EntityManager } from 'typeorm';
 import {
   INBOX_JOB_NAME,
@@ -33,7 +33,7 @@ export class InboxProcessor extends WorkerHost implements OnModuleInit {
     );
   }
 
-  async process(_job: Job): Promise<void> {
+  async process(): Promise<void> {
     await this.processPending();
   }
 
