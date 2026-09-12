@@ -1,9 +1,11 @@
 import { ClientProxy, NatsRecord } from '@nestjs/microservices';
-import { headers as natsHeaders } from 'nats';
+import { headers as natsHeaders, type MsgHdrs } from 'nats';
 import { of } from 'rxjs';
 import { TraceContextService } from '../trace-context.service';
 import { TraceService } from '../trace.service';
 import { NatsClientProxy } from './nats-client.proxy';
+
+type SentRecord = [string, NatsRecord<unknown, MsgHdrs>];
 
 class AlarmsController {}
 
@@ -32,18 +34,18 @@ describe('NatsClientProxy', () => {
   it('attaches the ambient trace id as a nats header on emit', () => {
     traceContext.run('trace-1', () => proxy.emit('alarms.create', { id: 7 }));
 
-    const [pattern, record] = client.emit.mock.calls[0] as [string, NatsRecord];
+    const [pattern, record] = client.emit.mock.calls[0] as SentRecord;
     expect(pattern).toBe('alarms.create');
     expect(record).toBeInstanceOf(NatsRecord);
     expect(record.data).toEqual({ id: 7 });
-    expect(record.headers.get('x-trace-id')).toBe('trace-1');
+    expect(record.headers?.get('x-trace-id')).toBe('trace-1');
   });
 
   it('attaches the ambient trace id as a nats header on send', () => {
     traceContext.run('trace-1', () => proxy.send('alarms.classify', { id: 7 }));
 
-    const [, record] = client.send.mock.calls[0] as [string, NatsRecord];
-    expect(record.headers.get('x-trace-id')).toBe('trace-1');
+    const [, record] = client.send.mock.calls[0] as SentRecord;
+    expect(record.headers?.get('x-trace-id')).toBe('trace-1');
   });
 
   it('sends the payload untouched outside a trace scope', () => {
@@ -60,10 +62,10 @@ describe('NatsClientProxy', () => {
       proxy.emit('alarms.create', new NatsRecord({ id: 7 }, existing)),
     );
 
-    const [, record] = client.emit.mock.calls[0] as [string, NatsRecord];
+    const [, record] = client.emit.mock.calls[0] as SentRecord;
     expect(record.data).toEqual({ id: 7 });
-    expect(record.headers.get('x-tenant')).toBe('acme');
-    expect(record.headers.get('x-trace-id')).toBe('trace-1');
+    expect(record.headers?.get('x-tenant')).toBe('acme');
+    expect(record.headers?.get('x-trace-id')).toBe('trace-1');
   });
 
   it('returns the observable produced by the underlying client', async () => {

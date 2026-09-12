@@ -1,8 +1,10 @@
 import { ClientProxy, NatsRecord } from '@nestjs/microservices';
-import { headers as createNatsHeaders } from 'nats';
+import { headers as createNatsHeaders, type MsgHdrs } from 'nats';
 import { TraceContextService } from '../trace-context.service';
 import { TRACE_ID_HEADER } from '../tracing.constants';
 import { TracingClientProxyBase } from './tracing-client-proxy.base';
+
+type TracedNatsRecord = NatsRecord<unknown, MsgHdrs>;
 
 export class NatsClientProxy extends TracingClientProxyBase {
   constructor(
@@ -13,8 +15,11 @@ export class NatsClientProxy extends TracingClientProxyBase {
     super(client, traceContext, inquirer, 'nats');
   }
 
-  protected attachTraceId(data: unknown, traceId: string): NatsRecord {
-    const record = data instanceof NatsRecord ? data : new NatsRecord(data);
+  protected attachTraceId(data: unknown, traceId: string): TracedNatsRecord {
+    const record: TracedNatsRecord =
+      data instanceof NatsRecord
+        ? (data as TracedNatsRecord)
+        : new NatsRecord(data);
     const headers = record.headers ?? createNatsHeaders();
     headers.set(TRACE_ID_HEADER, traceId);
     return new NatsRecord(record.data, headers);

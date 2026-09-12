@@ -31,10 +31,13 @@ describe('AlarmsGeneratorService', () => {
   it('emits an alarm with a name and a building id', async () => {
     await service.generateAlarms();
 
-    expect(client.emit).toHaveBeenCalledWith('alarms.create', {
-      name: expect.stringMatching(/^Alarm #/),
-      buildingId: expect.any(Number),
-    });
+    const [pattern, alarm] = client.emit.mock.calls[0] as [
+      string,
+      { name: string; buildingId: number },
+    ];
+    expect(pattern).toBe('alarms.create');
+    expect(alarm.name).toMatch(/^Alarm #/);
+    expect(typeof alarm.buildingId).toBe('number');
   });
 
   it('emits inside a freshly generated trace scope', async () => {
