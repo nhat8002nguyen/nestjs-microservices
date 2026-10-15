@@ -1,9 +1,7 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { lastValueFrom } from 'rxjs';
 import { DataSource, Repository } from 'typeorm';
-import { Outbox } from '../../../../libs/outbox/src/entities/outbox.entity';
+import { Outbox } from '@app/outbox';
 import { WORKFLOWS_SERVICE } from './constants';
 import { CreateBuildingDto } from './dto/create-building.dto';
 import { UpdateBuildingDto } from './dto/update-building.dto';
@@ -14,18 +12,14 @@ export class BuildingsService {
   constructor(
     @InjectRepository(Building)
     private readonly buildingsRepository: Repository<Building>,
-    @Inject(WORKFLOWS_SERVICE)
-    private readonly workflowsService: ClientProxy,
     private readonly dataSource: DataSource,
   ) {}
 
-  async create(createBuildingDto: CreateBuildingDto) {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-    try {
-      const buildingsRepository = queryRunner.manager.getRepository(Building);
-      const outboxRepository = queryRunner.manager.getRepository(Outbox);
+  async create(createBuildingDto: CreateBuildingDto): Promise<Building> {
+    return this.dataSource.transaction(async (manager) => {
+      const buildingsRepository = manager.getRepository(Building);
+      const outboxRepository = manager.getRepository(Outbox);
+
       const building = buildingsRepository.create({
         name: createBuildingDto.name,
       });
@@ -39,14 +33,9 @@ export class BuildingsService {
         },
         target: WORKFLOWS_SERVICE.description,
       });
-      await queryRunner.commitTransaction();
+
       return savedBuilding;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+    });
   }
 
   findAll(): Promise<Building[]> {
@@ -75,20 +64,5 @@ export class BuildingsService {
   async remove(id: number): Promise<void> {
     const building = await this.findOne(id);
     await this.buildingsRepository.remove(building);
-  }
-
-  async createWorkflow(buildingId: number) {
-    const newWorkflow = await lastValueFrom<{
-      id: number;
-      buildingId: number;
-      name: string;
-    }>(
-      this.workflowsService.emit('workflows.create', {
-        name: 'Building Workflow with rabbitmq',
-        buildingId,
-      }),
-    );
-    console.log(newWorkflow);
-    return newWorkflow;
   }
 }

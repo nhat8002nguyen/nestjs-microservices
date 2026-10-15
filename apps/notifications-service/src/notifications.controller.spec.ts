@@ -1,18 +1,16 @@
-import { TraceContextService, TraceService, TracingLogger } from '@app/tracing';
+import { TraceContextService, TracingLogger } from '@app/tracing';
 import { Logger } from '@nestjs/common';
 import { RmqContext } from '@nestjs/microservices';
 import { NotificationsController } from './notifications.controller';
-import { NotificationsService } from './notifications.service';
 
 describe('NotificationsController', () => {
   let traceContext: TraceContextService;
   let controller: NotificationsController;
 
   beforeEach(() => {
-    traceContext = new TraceContextService(new TraceService());
+    traceContext = new TraceContextService();
     controller = new NotificationsController(
       new TracingLogger('NotificationsController', traceContext),
-      new NotificationsService(),
     );
   });
 

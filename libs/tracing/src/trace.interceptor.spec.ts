@@ -3,7 +3,6 @@ import { headers as natsHeaders } from 'nats';
 import { defer, firstValueFrom, of } from 'rxjs';
 import { TraceContextService } from './trace-context.service';
 import { TraceInterceptor } from './trace.interceptor';
-import { TraceService } from './trace.service';
 
 const UUID_V4 =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -13,9 +12,8 @@ describe('TraceInterceptor', () => {
   let interceptor: TraceInterceptor;
 
   beforeEach(() => {
-    const traceService = new TraceService();
-    traceContext = new TraceContextService(traceService);
-    interceptor = new TraceInterceptor(traceContext, traceService);
+    traceContext = new TraceContextService();
+    interceptor = new TraceInterceptor(traceContext);
   });
 
   // The handler must observe the trace id, so it has to read it lazily at

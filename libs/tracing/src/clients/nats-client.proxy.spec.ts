@@ -2,7 +2,6 @@ import { ClientProxy, NatsRecord } from '@nestjs/microservices';
 import { headers as natsHeaders, type MsgHdrs } from 'nats';
 import { of } from 'rxjs';
 import { TraceContextService } from '../trace-context.service';
-import { TraceService } from '../trace.service';
 import { NatsClientProxy } from './nats-client.proxy';
 
 type SentRecord = [string, NatsRecord<unknown, MsgHdrs>];
@@ -15,7 +14,7 @@ describe('NatsClientProxy', () => {
   let proxy: NatsClientProxy;
 
   beforeEach(() => {
-    traceContext = new TraceContextService(new TraceService());
+    traceContext = new TraceContextService();
     client = {
       send: jest.fn(() => of('classified')),
       emit: jest.fn(() => of(undefined)),

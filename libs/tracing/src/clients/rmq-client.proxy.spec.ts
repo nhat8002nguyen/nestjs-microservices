@@ -1,7 +1,6 @@
 import { ClientProxy, RmqRecord } from '@nestjs/microservices';
 import { of } from 'rxjs';
 import { TraceContextService } from '../trace-context.service';
-import { TraceService } from '../trace.service';
 import { RmqClientProxy } from './rmq-client.proxy';
 
 class NotificationsPublisher {}
@@ -12,7 +11,7 @@ describe('RmqClientProxy', () => {
   let proxy: RmqClientProxy;
 
   beforeEach(() => {
-    traceContext = new TraceContextService(new TraceService());
+    traceContext = new TraceContextService();
     client = {
       send: jest.fn(() => of('ok')),
       emit: jest.fn(() => of(undefined)),

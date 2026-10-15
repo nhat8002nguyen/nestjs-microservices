@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
 import { Channel, Message } from 'amqplib';
-import { InboxService } from '../../../../libs/inbox/src/inbox.service';
+import { InboxService } from '@app/inbox/inbox.service';
 import { WorkflowsService } from './workflows.service';
 import { CreateWorkflowDto, UpdateWorkflowDto } from '@app/workflows';
 
@@ -41,14 +41,12 @@ export class WorkflowsController {
       return;
     }
 
-    const stored = await this.inboxService.store({
+    await this.inboxService.store({
       messageId,
       type: 'workflows.create',
       payload: createWorkflowDto as unknown as Record<string, unknown>,
     });
-    this.logger.log(
-      `[rmq → inbox] stored messageId=${messageId} inboxId=${stored.id} status=${stored.status}; acking RMQ`,
-    );
+    this.logger.log(`[rmq -> inbox] stored messageId=${messageId}; acking RMQ`);
     channel.ack(originalMessage);
   }
 

@@ -1,6 +1,5 @@
 import { Logger } from '@nestjs/common';
 import { TraceContextService } from './trace-context.service';
-import { TraceService } from './trace.service';
 import { TracingLogger } from './tracing-logger.service';
 
 class OrdersController {}
@@ -11,7 +10,7 @@ describe('TracingLogger', () => {
   let errorSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    traceContext = new TraceContextService(new TraceService());
+    traceContext = new TraceContextService();
     logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
     errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
   });

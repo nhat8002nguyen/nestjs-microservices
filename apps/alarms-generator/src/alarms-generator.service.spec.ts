@@ -1,4 +1,4 @@
-import { TraceContextService, TraceService, TracingLogger } from '@app/tracing';
+import { TraceContextService, TracingLogger } from '@app/tracing';
 import { of } from 'rxjs';
 import { AlarmsGeneratorService } from './alarms-generator.service';
 
@@ -12,7 +12,7 @@ describe('AlarmsGeneratorService', () => {
   let service: AlarmsGeneratorService;
 
   beforeEach(() => {
-    traceContext = new TraceContextService(new TraceService());
+    traceContext = new TraceContextService();
     observedTraceIds = [];
     client = {
       send: jest.fn(),

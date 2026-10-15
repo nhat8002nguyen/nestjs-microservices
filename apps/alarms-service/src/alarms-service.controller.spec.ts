@@ -1,4 +1,4 @@
-import { TraceContextService, TraceService, TracingLogger } from '@app/tracing';
+import { TraceContextService, TracingLogger } from '@app/tracing';
 import { of } from 'rxjs';
 import { AlarmsServiceController } from './alarms-service.controller';
 
@@ -9,7 +9,7 @@ describe('AlarmsServiceController', () => {
   let controller: AlarmsServiceController;
 
   beforeEach(() => {
-    traceContext = new TraceContextService(new TraceService());
+    traceContext = new TraceContextService();
     classifier = {
       send: jest.fn(() => of({ id: 'alarm-1', classification: 'critical' })),
       emit: jest.fn(() => of(undefined)),

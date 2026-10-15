@@ -1,13 +1,18 @@
 import { TraceContextService } from './trace-context.service';
-import { TraceService } from './trace.service';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const UUID_V4 =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 describe('TraceContextService', () => {
   let context: TraceContextService;
 
   beforeEach(() => {
-    context = new TraceContextService(new TraceService());
+    context = new TraceContextService();
+  });
+
+  it('generates a v4 uuid', () => {
+    expect(context.generateTraceId()).toMatch(UUID_V4);
   });
 
   it('returns undefined outside of any trace scope', () => {

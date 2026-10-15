@@ -1,22 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { EntityManager, QueryFailedError } from 'typeorm';
+import { EntityManager } from 'typeorm';
 import { Inbox } from './entities/inbox.entity';
 import { InboxService } from './inbox.service';
 
 describe('InboxService', () => {
   let service: InboxService;
+  let queryBuilder: {
+    insert: jest.Mock;
+    into: jest.Mock;
+    values: jest.Mock;
+    orIgnore: jest.Mock;
+    execute: jest.Mock;
+  };
   let repository: {
-    create: jest.Mock;
-    save: jest.Mock;
-    findOneBy: jest.Mock;
+    createQueryBuilder: jest.Mock;
   };
 
   beforeEach(async () => {
+    queryBuilder = {
+      insert: jest.fn().mockReturnThis(),
+      into: jest.fn().mockReturnThis(),
+      values: jest.fn().mockReturnThis(),
+      orIgnore: jest.fn().mockReturnThis(),
+      execute: jest.fn().mockResolvedValue(undefined),
+    };
     repository = {
-      create: jest.fn(),
-      save: jest.fn(),
-      findOneBy: jest.fn(),
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -29,56 +39,25 @@ describe('InboxService', () => {
     service = module.get(InboxService);
   });
 
-  it('store inserts a pending inbox row', async () => {
+  it('store inserts a pending inbox row with ON CONFLICT DO NOTHING (.orIgnore)', async () => {
     const input = {
       messageId: 'outbox:1',
       type: 'workflows.create',
       payload: { name: 'wf', buildingId: 1 },
     };
-    const created = { ...input, status: 'pending' };
-    const saved = { id: 1, ...created };
-    repository.create.mockReturnValue(created);
-    repository.save.mockResolvedValue(saved);
 
-    const result = await service.store(input);
+    await service.store(input);
 
-    expect(repository.create).toHaveBeenCalledWith({
-      messageId: input.messageId,
-      type: input.type,
-      payload: input.payload,
-    });
-    expect(repository.save).toHaveBeenCalledWith(created);
-    expect(result).toEqual(saved);
+    expect(repository.createQueryBuilder).toHaveBeenCalled();
+    expect(queryBuilder.insert).toHaveBeenCalled();
+    expect(queryBuilder.into).toHaveBeenCalledWith(Inbox);
+    expect(queryBuilder.values).toHaveBeenCalledWith(input);
+    expect(queryBuilder.orIgnore).toHaveBeenCalled();
+    expect(queryBuilder.execute).toHaveBeenCalled();
   });
 
-  it('store treats duplicate messageId as already stored', async () => {
-    const input = {
-      messageId: 'outbox:1',
-      type: 'workflows.create',
-      payload: { name: 'wf', buildingId: 1 },
-    };
-    const existing = { id: 1, ...input, status: 'pending' };
-    repository.create.mockReturnValue(input);
-    repository.save.mockRejectedValue(
-      new QueryFailedError(
-        'INSERT',
-        [],
-        Object.assign(new Error('duplicate'), { code: '23505' }),
-      ),
-    );
-    repository.findOneBy.mockResolvedValue(existing);
-
-    const result = await service.store(input);
-
-    expect(result).toEqual(existing);
-    expect(repository.findOneBy).toHaveBeenCalledWith({
-      messageId: 'outbox:1',
-    });
-  });
-
-  it('store rethrows errors that are not unique violations', async () => {
-    repository.create.mockReturnValue({});
-    repository.save.mockRejectedValue(new Error('db down'));
+  it('store rethrows database errors', async () => {
+    queryBuilder.execute.mockRejectedValue(new Error('db down'));
 
     await expect(
       service.store({
@@ -121,88 +100,68 @@ describe('InboxService', () => {
     expect(result).toEqual(rows);
   });
 
-  it('markProcessed sets status to processed on the transaction manager', async () => {
-    const save = jest.fn().mockResolvedValue(undefined);
-    const findOneByOrFail = jest.fn().mockResolvedValue({
-      id: 7,
-      status: 'pending',
-    });
-    const getRepository = jest.fn().mockReturnValue({ findOneByOrFail, save });
+  it('markProcessed updates status to processed directly', async () => {
+    const update = jest.fn().mockResolvedValue(undefined);
+    const getRepository = jest.fn().mockReturnValue({ update });
     const manager = { getRepository } as unknown as EntityManager;
 
     await service.markProcessed(7, manager);
 
     expect(getRepository).toHaveBeenCalledWith(Inbox);
-    expect(save).toHaveBeenCalledWith({ id: 7, status: 'processed' });
+    expect(update).toHaveBeenCalledWith(7, { status: 'processed' });
   });
 
   it('recordFailure increments attempts and stays pending under the cap', async () => {
-    const row = {
-      id: 7,
-      status: 'pending' as const,
-      attempts: 0,
-      lastError: null as string | null,
-    };
-    const save = jest.fn().mockResolvedValue(undefined);
-    const findOneByOrFail = jest.fn().mockResolvedValue(row);
+    const update = jest.fn().mockResolvedValue(undefined);
     const manager = {
-      getRepository: jest.fn().mockReturnValue({ findOneByOrFail, save }),
+      getRepository: jest.fn().mockReturnValue({ update }),
     } as unknown as EntityManager;
 
     await service.recordFailure(
-      7,
+      { id: 7, attempts: 0 },
       new Error('boom'),
       { maxAttempts: 3 },
       manager,
     );
 
-    expect(row.attempts).toBe(1);
-    expect(row.status).toBe('pending');
-    expect(row.lastError).toBe('boom');
-    expect(save).toHaveBeenCalledWith(row);
+    expect(update).toHaveBeenCalledWith(7, {
+      attempts: 1,
+      status: 'pending',
+      lastError: 'boom',
+    });
   });
 
   it('recordFailure marks failed when attempts reach the cap', async () => {
-    const row = {
-      id: 7,
-      status: 'pending' as const,
-      attempts: 2,
-      lastError: null as string | null,
-    };
-    const save = jest.fn().mockResolvedValue(undefined);
-    const findOneByOrFail = jest.fn().mockResolvedValue(row);
+    const update = jest.fn().mockResolvedValue(undefined);
     const manager = {
-      getRepository: jest.fn().mockReturnValue({ findOneByOrFail, save }),
+      getRepository: jest.fn().mockReturnValue({ update }),
     } as unknown as EntityManager;
 
     await service.recordFailure(
-      7,
+      { id: 7, attempts: 2 },
       new Error('boom'),
       { maxAttempts: 3 },
       manager,
     );
 
-    expect(row.attempts).toBe(3);
-    expect(row.status).toBe('failed');
-    expect(row.lastError).toBe('boom');
+    expect(update).toHaveBeenCalledWith(7, {
+      attempts: 3,
+      status: 'failed',
+      lastError: 'boom',
+    });
   });
 
   it('markFailed sets failed immediately with lastError', async () => {
-    const row = {
-      id: 7,
-      status: 'pending' as const,
-      lastError: null as string | null,
-    };
-    const save = jest.fn().mockResolvedValue(undefined);
-    const findOneByOrFail = jest.fn().mockResolvedValue(row);
+    const update = jest.fn().mockResolvedValue(undefined);
     const manager = {
-      getRepository: jest.fn().mockReturnValue({ findOneByOrFail, save }),
+      getRepository: jest.fn().mockReturnValue({ update }),
     } as unknown as EntityManager;
 
     await service.markFailed(7, 'no handler for other.event', manager);
 
-    expect(row.status).toBe('failed');
-    expect(row.lastError).toBe('no handler for other.event');
-    expect(save).toHaveBeenCalledWith(row);
+    expect(update).toHaveBeenCalledWith(7, {
+      status: 'failed',
+      lastError: 'no handler for other.event',
+    });
   });
 });

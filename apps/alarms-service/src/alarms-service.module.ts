@@ -1,7 +1,6 @@
 import { NatsClientModule, RmqClientModule, TracingModule } from '@app/tracing';
 import { Module } from '@nestjs/common';
 import { AlarmsServiceController } from './alarms-service.controller';
-import { AlarmsServiceService } from './alarms-service.service';
 import { ALARMS_CLASSIFIER_SERVICE, NOTIFICATIONS_SERVICE } from './constants';
 
 @Module({
@@ -15,6 +14,5 @@ import { ALARMS_CLASSIFIER_SERVICE, NOTIFICATIONS_SERVICE } from './constants';
     ]),
   ],
   controllers: [AlarmsServiceController],
-  providers: [AlarmsServiceService],
 })
 export class AlarmsServiceModule {}

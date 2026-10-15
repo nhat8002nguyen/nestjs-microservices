@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { TraceContextService } from './trace-context.service';
-import { TraceService } from './trace.service';
 import {
   extractTraceIdFromHttpRequest,
   extractTraceIdFromRpcContext,
@@ -14,10 +13,7 @@ import {
 
 @Injectable()
 export class TraceInterceptor implements NestInterceptor {
-  constructor(
-    private readonly traceContext: TraceContextService,
-    private readonly traceService: TraceService,
-  ) {}
+  constructor(private readonly traceContext: TraceContextService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const traceId = this.resolveTraceId(context);
@@ -30,7 +26,7 @@ export class TraceInterceptor implements NestInterceptor {
   }
 
   private resolveTraceId(context: ExecutionContext): string {
-    return this.extractTraceId(context) ?? this.traceService.generateTraceId();
+    return this.extractTraceId(context) ?? this.traceContext.generateTraceId();
   }
 
   private extractTraceId(context: ExecutionContext): string | undefined {

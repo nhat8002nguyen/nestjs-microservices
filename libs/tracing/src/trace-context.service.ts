@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { TraceService } from './trace.service';
+import { randomUUID } from 'node:crypto';
 
 export interface TraceStore {
   traceId: string;
@@ -10,14 +10,16 @@ export interface TraceStore {
 export class TraceContextService {
   private readonly storage = new AsyncLocalStorage<TraceStore>();
 
-  constructor(private readonly traceService: TraceService) {}
+  generateTraceId(): string {
+    return randomUUID();
+  }
 
   run<T>(traceId: string, callback: () => T): T {
     return this.storage.run({ traceId }, callback);
   }
 
   runWithNewTrace<T>(callback: (traceId: string) => T): T {
-    const traceId = this.traceService.generateTraceId();
+    const traceId = this.generateTraceId();
     return this.storage.run({ traceId }, () => callback(traceId));
   }
 
