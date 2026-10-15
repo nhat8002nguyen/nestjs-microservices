@@ -8,6 +8,7 @@ import {
   INBOX_QUEUE,
   INBOX_REPEATABLE_JOB_ID,
 } from './inbox.constants';
+import { Inbox } from './entities/inbox.entity';
 import { InboxService } from './inbox.service';
 import type { InboxModuleOptions } from './inbox.types';
 
@@ -39,19 +40,18 @@ export class InboxProcessor extends WorkerHost implements OnModuleInit {
 
   async processPending(): Promise<void> {
     for (let i = 0; i < this.options.take; i++) {
-      let claimedId: number | undefined;
+      let claimedRow: Pick<Inbox, 'id' | 'attempts'> | undefined;
       try {
         const hasRow = await this.dataSource.transaction(async (manager) => {
-          const rows = await this.inboxService.claimPending({
+          const [row] = await this.inboxService.claimPending({
             take: 1,
             maxAttempts: this.options.maxAttempts,
             manager,
           });
-          const row = rows[0];
           if (!row) {
             return false;
           }
-          claimedId = row.id;
+          claimedRow = { id: row.id, attempts: row.attempts };
           this.logger.log(
             `[inbox] claimed id=${row.id} messageId=${row.messageId} type=${row.type}`,
           );
@@ -78,17 +78,17 @@ export class InboxProcessor extends WorkerHost implements OnModuleInit {
           break;
         }
       } catch (error) {
-        if (claimedId === undefined) {
+        if (!claimedRow) {
           throw error;
         }
-        const failedId = claimedId;
+        const failedRow = claimedRow;
         const reason = error instanceof Error ? error.message : String(error);
         this.logger.error(
-          `[inbox] handler failed id=${failedId}: ${reason}; recording attempt`,
+          `[inbox] handler failed id=${failedRow.id}: ${reason}; recording attempt`,
         );
         await this.dataSource.transaction(async (manager: EntityManager) => {
           await this.inboxService.recordFailure(
-            failedId,
+            failedRow,
             error,
             { maxAttempts: this.options.maxAttempts },
             manager,

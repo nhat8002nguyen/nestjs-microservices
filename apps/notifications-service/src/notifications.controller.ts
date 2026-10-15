@@ -2,14 +2,10 @@ import { TracingLogger } from '@app/tracing';
 import { Controller } from '@nestjs/common';
 import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
 import { Channel, Message } from 'amqplib';
-import { NotificationsService } from './notifications.service';
 
 @Controller()
 export class NotificationsController {
-  constructor(
-    private readonly logger: TracingLogger,
-    private readonly notificationsService: NotificationsService,
-  ) {}
+  constructor(private readonly logger: TracingLogger) {}
 
   @EventPattern('notifications.create')
   createNotification(

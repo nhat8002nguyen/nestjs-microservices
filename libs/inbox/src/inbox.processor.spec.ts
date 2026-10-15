@@ -121,7 +121,7 @@ describe('InboxProcessor', () => {
 
     expect(inboxService.markProcessed).not.toHaveBeenCalled();
     expect(inboxService.recordFailure).toHaveBeenCalledWith(
-      row.id,
+      { id: row.id, attempts: row.attempts },
       expect.objectContaining({ message: 'create failed' }),
       { maxAttempts: 3 },
       manager,

@@ -1,17 +1,15 @@
-import { TraceContextService, TraceService, TracingLogger } from '@app/tracing';
+import { TraceContextService, TracingLogger } from '@app/tracing';
 import { Logger } from '@nestjs/common';
 import { AlarmsClassifierController } from './alarms-classifier.controller';
-import { AlarmsClassifierService } from './alarms-classifier.service';
 
 describe('AlarmsClassifierController', () => {
   let traceContext: TraceContextService;
   let controller: AlarmsClassifierController;
 
   beforeEach(() => {
-    traceContext = new TraceContextService(new TraceService());
+    traceContext = new TraceContextService();
     controller = new AlarmsClassifierController(
       new TracingLogger('AlarmsClassifierController', traceContext),
-      new AlarmsClassifierService(),
     );
   });
 

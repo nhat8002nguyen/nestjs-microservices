@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { InboxModule } from '@app/inbox/inbox.module';
 import { CreateWorkflowDto } from '@app/workflows';
-import { WorkflowsServiceController } from './workflows-service.controller';
-import { WorkflowsServiceService } from './workflows-service.service';
 import { HealthModule } from './health/health.module';
 import { WorkflowsModule } from './workflows/workflows.module';
 import { WorkflowsService } from './workflows/workflows.service';
@@ -41,7 +39,5 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       }),
     }),
   ],
-  controllers: [WorkflowsServiceController],
-  providers: [WorkflowsServiceService],
 })
 export class WorkflowsServiceModule {}

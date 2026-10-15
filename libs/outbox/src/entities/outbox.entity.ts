@@ -2,11 +2,13 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 @Entity()
+@Index(['target', 'status', 'createdAt'])
 export class Outbox {
   @PrimaryGeneratedColumn()
   id: number;

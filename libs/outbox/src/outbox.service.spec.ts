@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 import { Outbox } from './entities/outbox.entity';
 import { OutboxService } from './outbox.service';
 
 describe('OutboxService', () => {
   let service: OutboxService;
-  let repository: { find: jest.Mock; update: jest.Mock };
+  let repository: { update: jest.Mock };
 
   beforeEach(async () => {
     repository = {
-      find: jest.fn(),
       update: jest.fn(),
     };
 
@@ -27,20 +27,35 @@ describe('OutboxService', () => {
     expect(service).toBeDefined();
   });
 
-  it('loads pending messages for a target in createdAt order', async () => {
+  it('claims pending messages for a target with SKIP LOCKED in createdAt order', async () => {
     const rows = [{ id: 1, status: 'pending' }];
-    repository.find.mockResolvedValue(rows);
+    const getMany = jest.fn().mockResolvedValue(rows);
+    const take = jest.fn().mockReturnValue({ getMany });
+    const orderBy = jest.fn().mockReturnValue({ take });
+    const andWhere = jest.fn().mockReturnValue({ orderBy });
+    const where = jest.fn().mockReturnValue({ andWhere });
+    const setOnLocked = jest.fn().mockReturnValue({ where });
+    const setLock = jest.fn().mockReturnValue({ setOnLocked });
+    const createQueryBuilder = jest.fn().mockReturnValue({ setLock });
+    const manager = { createQueryBuilder } as unknown as EntityManager;
 
-    const result = await service.getPendingOutboxMessages({
+    const result = await service.claimPending({
       target: 'workflows-service',
-      take: 100,
+      take: 1,
+      manager,
     });
 
-    expect(repository.find).toHaveBeenCalledWith({
-      where: { target: 'workflows-service', status: 'pending' },
-      order: { createdAt: 'ASC' },
-      take: 100,
+    expect(createQueryBuilder).toHaveBeenCalledWith(Outbox, 'outbox');
+    expect(setLock).toHaveBeenCalledWith('pessimistic_write');
+    expect(setOnLocked).toHaveBeenCalledWith('skip_locked');
+    expect(where).toHaveBeenCalledWith('outbox.target = :target', {
+      target: 'workflows-service',
     });
+    expect(andWhere).toHaveBeenCalledWith('outbox.status = :status', {
+      status: 'pending',
+    });
+    expect(orderBy).toHaveBeenCalledWith('outbox.createdAt', 'ASC');
+    expect(take).toHaveBeenCalledWith(1);
     expect(result).toEqual(rows);
   });
 

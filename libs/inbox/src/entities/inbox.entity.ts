@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -9,6 +10,7 @@ import {
 export type InboxStatus = 'pending' | 'processed' | 'failed';
 
 @Entity()
+@Index(['status', 'createdAt'])
 export class Inbox {
   @PrimaryGeneratedColumn()
   id: number;
@@ -20,7 +22,7 @@ export class Inbox {
   type: string;
 
   @Column({ type: 'jsonb' })
-  payload: Record<string, unknown>;
+  payload: Record<string, any>;
 
   @Column({
     type: 'enum',
